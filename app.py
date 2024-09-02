@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 # URL of the published Google Sheet in CSV format
 sheet_url = 'https://docs.google.com/spreadsheets/d/1WL2RE3kaeGXHoFn26zUMPKMlGyiIc13eTuCES6uYuG0/pub?output=csv'
 
-@st.cache_data
+@st.cache_data(ttl=60)
 def load_data():
     # Load the data into a DataFrame
     df = pd.read_csv(sheet_url)
