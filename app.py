@@ -3,7 +3,7 @@ import streamlit as st
 import plotly.graph_objects as go
 
 # URL of the published Google Sheet in CSV format
-sheet_url = 'https://omansomsco-my.sharepoint.com/:x:/g/personal/data_analyst1_somsco_com/EfxAba6oBHdNoHuRfhNZShMB1sAbS6CcJ-HL9oqCXA7sGg?e=9pHzFJ'
+sheet_url = 'https://omansomsco-my.sharepoint.com/:x:/g/personal/data_analyst1_somsco_com/EfxAba6oBHdNoHuRfhNZShMB7f2sd3_jWGEezSPAHPIy3g?e=oYo5nG'
 
 @st.cache_data(ttl=60)
 def load_data():
