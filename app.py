@@ -417,7 +417,7 @@ elif page == "Project Status":
         x=client_status_filtered.index,
         y=client_status_filtered['Ongoing'],
         name='Ongoing Jobs',
-        marker_color='#fffffc',  # Customize as needed
+        marker_color='#FF7F7F',  # Customize as needed
         text=client_status_filtered['Ongoing'],
         textposition='inside',  # Display text inside the bars
     ))
