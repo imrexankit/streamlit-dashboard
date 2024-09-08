@@ -204,7 +204,7 @@ elif data_source == "Idle Manpower":
 
         fig.update_layout(
             title='Idle Manhours Per Day',
-            xaxis_title='Date',
+            #xaxis_title='Date',
             yaxis_title='Total Idle Manhours',
             xaxis=dict(
                 type='date', 
@@ -265,7 +265,7 @@ elif data_source == "Idle Manpower":
 
         fig_client.update_layout(
             title='Total Idle Manhours by Client',
-            xaxis_title='Client',
+            #   xaxis_title='Client',
             yaxis_title='Total Idle Manhours',
             margin=dict(l=50, r=50, t=40, b=100),
             height=400,
@@ -323,7 +323,7 @@ elif data_source == "Idle Manpower":
 
         fig_client_cost.update_layout(
             title='Total Cost of Idle Time by Client',
-            xaxis_title='Client',
+            #xaxis_title='Client',
             yaxis_title='Total Cost of Idle Time',
             margin=dict(l=50, r=50, t=40, b=100),
             height=600,
@@ -460,12 +460,12 @@ elif data_source == "Project Status":
             # arrowhead=2,
             # ax=0,
             # ay=-50,  # Adjust position of annotation
-            font=dict(size=12, color="white")
+            font=dict(size=12, color="orange")
         )
 
     fig_client.update_layout(
         title='Completed and Ongoing Jobs by Client',
-        xaxis_title='Client',
+        #xaxis_title='Client',
         yaxis_title='Number of Jobs',
         barmode='stack',
         xaxis=dict(tickangle=-45),  # Rotate x-axis labels if needed for readability
@@ -488,12 +488,32 @@ elif data_source == "Project Status":
         y=type_status[status],
         name=status,
         text=type_status[status],  # Show values inside bars
-        textposition='auto'
-    ))
+            textposition='auto'
+        ))
+    
+    # Calculate the total number of jobs for each project type
+    totals = type_status.sum(axis=1)
+    
+    # Add annotations (total values) at the top of each stacked bar
+    annotations = []
+    for i, total in enumerate(totals):
+        annotations.append(dict(
+            x=type_status.index[i],
+            y=total,
+            text=str(total),
+            showarrow=False,
+            font=dict(size=12, color="orange"),
+            xanchor='center',
+            yanchor='bottom'
+        ))
+    
+    # Update layout to include title, axis labels, and annotations
     fig_type.update_layout(
         title='Completed and Ongoing Jobs by Project Type',
-        xaxis_title='Project Type',
+        #xaxis_title='Project Type',
         yaxis_title='Number of Jobs',
-        barmode='stack'
+        barmode='stack',
+        annotations=annotations  # Add the total annotations
     )
+
     st.plotly_chart(fig_type)
