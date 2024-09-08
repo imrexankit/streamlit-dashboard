@@ -16,7 +16,7 @@ def load_data(url):
 
 # Sidebar
 st.sidebar.title("Select a Data Source")
-data_source = st.sidebar.radio("Choose a sheet", ("Projects", "Idle Manpower"))
+data_source = st.sidebar.radio("Choose a sheet", ("Project Timeline", "Project Status", "Idle Manpower"))
 
 # # Filters section
 # st.sidebar.subheader("Filters")
@@ -26,41 +26,47 @@ data_source = st.sidebar.radio("Choose a sheet", ("Projects", "Idle Manpower"))
 # site_filter = st.sidebar.selectbox("Site", ["Site 1", "Site 2", "Site 3"])  # Example filter for sites
 
 # Load the appropriate data based on the selected sheet
-if data_source == "Projects":
+if data_source == "Project Timeline":
     df = load_data(project_sheet_url)
-else:
+elif data_source == "Idle Manpower":
     df = load_data(idle_time_url)
+elif data_source == "Project Status":
+    df = load_data(Project_status)
 
 # Main area header and dropdown for pages
 st.title("SOMS Dashboard")
-page = st.selectbox("Select Page", ["Timeline Chart", "Idle Manpower", "Project Status"])
+# page = st.selectbox("Select Page", ["Timeline Chart", "Idle Manpower", "Project Status"])
 
 
 # Main content area based on dropdown selection
-if page == "Timeline Chart":
+#if page == "Timeline Chart":
+if data_source == "Project Timeline":
     st.subheader("Timeline Chart")
-    if data_source == "Projects":
-        # Convert columns to datetime
-        df['Expected Start'] = pd.to_datetime(df['Expected Start'], format='%d-%b-%Y', errors='coerce')
-        df['Expected End'] = pd.to_datetime(df['Expected End'], format='%d-%b-%Y', errors='coerce')
-        df['Actual Start'] = pd.to_datetime(df['Actual Start'], format='%d-%b-%Y', errors='coerce')
-        df['Actual End'] = pd.to_datetime(df['Actual End'], errors='coerce')
+    
+        #vertical space
+    st.markdown("<br><br>", unsafe_allow_html=True)  # Adds more vertical space
 
-        # Update Actual End dates
-        today = pd.Timestamp.now().normalize()
-        df['Actual End'] = df['Actual End'].fillna(today)
-        df.loc[df['Actual End'] > today, 'Actual End'] = today
+    # Convert columns to datetime
+    df['Expected Start'] = pd.to_datetime(df['Expected Start'], format='%d-%b-%Y', errors='coerce')
+    df['Expected End'] = pd.to_datetime(df['Expected End'], format='%d-%b-%Y', errors='coerce')
+    df['Actual Start'] = pd.to_datetime(df['Actual Start'], format='%d-%b-%Y', errors='coerce')
+    df['Actual End'] = pd.to_datetime(df['Actual End'], errors='coerce')
+
+    # Update Actual End dates
+    today = pd.Timestamp.now().normalize()
+    df['Actual End'] = df['Actual End'].fillna(today)
+    df.loc[df['Actual End'] > today, 'Actual End'] = today
 
         # Filter data
-        df_filtered = df.dropna(subset=['Expected Start', 'Expected End'])
-        df_filtered = df_filtered[~df_filtered['Actual Start'].isna()]
+    df_filtered = df.dropna(subset=['Expected Start', 'Expected End'])
+    df_filtered = df_filtered[~df_filtered['Actual Start'].isna()]
 
-        # Create Gantt Chart    
-        fig = go.Figure()
+    # Create Gantt Chart    
+    fig = go.Figure()
 
-        for i, row in df_filtered.iterrows():
-            if pd.notna(row['Expected Start']) and pd.notna(row['Expected End']):
-                fig.add_trace(go.Scatter(
+    for i, row in df_filtered.iterrows():
+        if pd.notna(row['Expected Start']) and pd.notna(row['Expected End']):
+            fig.add_trace(go.Scatter(
                     x=[row['Expected Start'], row['Expected End']],
                     y=[row['job_code'], row['job_code']],
                     mode='lines+markers',
@@ -82,7 +88,7 @@ if page == "Timeline Chart":
                 ))
 
         # Add annotations for Expected and Actual dates
-        for i, row in df_filtered.iterrows():
+    for i, row in df_filtered.iterrows():
             if pd.notna(row['Expected Start']):
                 fig.add_annotation(
                     x=row['Expected Start'],
@@ -125,7 +131,7 @@ if page == "Timeline Chart":
                 )
 
         # Update layout
-        fig.update_layout(
+    fig.update_layout(
             title='Gantt Chart: Expected vs Actual Dates',
             xaxis_title='Date',
             yaxis_title='Job Code',
@@ -135,27 +141,51 @@ if page == "Timeline Chart":
             legend=dict(yanchor="bottom", y=1.02, xanchor="right", x=1),
             height=400 + len(df_filtered) * 20,  # Dynamic height based on the number of tasks
             margin=dict(l=0, r=0, t=40, b=0)
-        )
-        st.plotly_chart(fig)
-# Close the box
-    
+    )
+    st.plotly_chart(fig)
+# Close the box    
 
-elif page == "Idle Manpower":
+elif data_source == "Idle Manpower":
     st.subheader("Idle Manpower Report")
 
     #vertical space
     st.markdown("<br><br>", unsafe_allow_html=True)  # Adds more vertical space
+    
+    # Data for the cards
+    # Calculate Idle Manhours
+    df['Idle Manhours'] = df['Days Idle'] * 9
+    # Aggregate Idle Manhours by Date
+    df_daily_idle = df.groupby('Date').agg({'Idle Manhours': 'sum'}).reset_index()
+    # Calculate average idle manhours
+    average_idle_manhours = df_daily_idle['Idle Manhours'].mean()
+    # Calculate average cost of idle time
+    avg_cost_of_idle_time = df['Pay Per Day'].mean().round(0)
+    # Calculate total idle mandays
+    total_idle_mandays = df['Days Idle'].sum()
+    # Data Cards to Display metrics in cards
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric(label="Daily Avg Idle Manhours", value=f"{average_idle_manhours:,.0f}")
+
+    with col2:
+        st.metric(label="Avg Cost of Idle Time", value=f"{avg_cost_of_idle_time:,.0f}")
+
+    with col3:
+        st.metric(label="Total Idle Mandays", value=total_idle_mandays)
+
+    #vertical space
+    st.markdown("<br><br>", unsafe_allow_html=True)  # Adds more vertical space
+
 
     if data_source == "Idle Manpower":
+        
         # Convert the 'Date' column to datetime
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-
-        # Calculate Idle Manhours
+        
         df['Idle Manhours'] = df['Days Idle'] * 9
-
         # Aggregate Idle Manhours by Date
         df_daily_idle = df.groupby('Date').agg({'Idle Manhours': 'sum'}).reset_index()
-        average_idle_manhours = df_daily_idle['Idle Manhours'].mean()
 
 
         # Create Line Chart
@@ -171,11 +201,6 @@ elif page == "Idle Manpower":
             textfont=dict(size=7)
         ))
 
-        # fig.update_traces(
-        #     texttemplate='%{y:.2s}',  # Display text with 2 decimal places
-        #     textposition='top left',
-            
-        # )
 
         fig.update_layout(
             title='Idle Manhours Per Day',
@@ -204,7 +229,7 @@ elif page == "Idle Manpower":
                     x=0.5, y=1.1,  # Position above the chart (right side)
                     text=f"Avg Idle Hours per Day: {average_idle_manhours:,.0f}",  # Format to 2 decimal places
                     showarrow=False,
-                    font=dict(size=14, color="white"),
+                    font=dict(size=14, color="orange"),
                     bordercolor="white",
                     borderwidth=0,
                     borderpad=4,
@@ -220,7 +245,6 @@ elif page == "Idle Manpower":
 
         #vertical space
         st.markdown("<br><br>", unsafe_allow_html=True)  # Adds more vertical space
-
 
 
         # Aggregate Idle Manhours by Client
@@ -259,7 +283,7 @@ elif page == "Idle Manpower":
                     x=0.5, y=1.1,  # Position above the chart (right side)
                     text=f"Total Idle Manhours: {total_idle_manhours:,.0f}",  # Format to 2 decimal places
                     showarrow=False,
-                    font=dict(size=14, color="white"),
+                    font=dict(size=14, color="orange"),
                     bordercolor="white",
                     borderwidth=0,
                     borderpad=4,
@@ -316,7 +340,7 @@ elif page == "Idle Manpower":
         st.plotly_chart(fig_client_cost)
 
 # Project Status page area 
-elif page == "Project Status":
+elif data_source == "Project Status":
     #st.subheader("Project Status")
     df_project_status = load_data(Project_status)
     #st.write(df_project_status)
@@ -350,11 +374,13 @@ elif page == "Project Status":
     completed_jobs = df_project_data[df_project_data['Remark'] == 'Completed'].shape[0]
     ongoing_jobs = df_project_data[df_project_data['Remark'] == 'Ongoing'].shape[0]
 
-    # Display metrics in cards
+    # Subheader
     st.subheader("Project Status Overview")
-    st.markdown("<br><br>", unsafe_allow_html=True)  # Adds more vertical space
+    # Adds more vertical space
+    st.markdown("<br><br>", unsafe_allow_html=True)  
 
 
+    # Display metrics in cards
     col1, col2, col3 = st.columns(3)
 
     with col1:
